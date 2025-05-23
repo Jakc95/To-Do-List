@@ -1,7 +1,7 @@
-import { attivitaDemo } from "../app.js";
-import { categorieDemo } from "../app.js";
+import { attivita, categorie, impostazioni } from "../app.js";
 import { Attivita } from "../model/attivita.js";
 import { renderSidebarCategorie } from "./navbar.js";
+import { saveAttivita } from "../storage.js";
 
 let currentIdCategoria = "";
 let currentCestino = false;
@@ -21,7 +21,7 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
         }
     }
     else {
-        const descrizioneCategoria = categorieDemo.find(c => c.idCategoria === currentIdCategoria).descrizione;
+        const descrizioneCategoria = categorie.find(c => c.idCategoria === currentIdCategoria).descrizione;
         pageTitle = `Attività (${descrizioneCategoria})`;
     }
 
@@ -69,10 +69,10 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
     taskTableBody.innerHTML = "";
 
     const chkIncludiAttivitaCompletate = document.getElementById("includi-attivita-completate");
-    const attivitaOrdinate = [...attivitaDemo].sort((a, b) => a.dataScadenza.localeCompare(b.dataScadenza));
+    const attivitaOrdinate = [...attivita].sort((a, b) => a.dataScadenza.localeCompare(b.dataScadenza));
 
     let attivitaFiltrate = attivitaOrdinate.filter(a => (currentIdCategoria === "" || a.categoriaId === currentIdCategoria) &&
-        (chkIncludiAttivitaCompletate.checked || a.dataCompletamento === null));
+        (currentCestino || chkIncludiAttivitaCompletate.checked || a.dataCompletamento === null));
 
     if (currentCestino) {
         attivitaFiltrate = attivitaFiltrate.filter(a => a.dataEliminazione !== null);
@@ -83,9 +83,9 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
 
     for (const attivita of attivitaFiltrate) {
         const trAttivita = document.createElement("tr");
-        const categoriaAttivita = categorieDemo.find(c => c.idCategoria === attivita.categoriaId);
+        const categoriaAttivita = categorie.find(c => c.idCategoria === attivita.categoriaId);
         if (categoriaAttivita.colore !== "transparent") {
-            trAttivita.style.backgroundColor = categorieDemo.find(c => c.idCategoria === attivita.categoriaId).colore + "50";
+            trAttivita.style.backgroundColor = categorie.find(c => c.idCategoria === attivita.categoriaId).colore + "50";
         }
 
         trAttivita.innerHTML = `
@@ -187,7 +187,12 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
             closeTask(id);
         }
         else if (e.target.classList.contains("recycle-bin-button")) {
-            recycleTask(id);
+            if (impostazioni.cestinoAbilitato) {
+                recycleTask(id);
+            }
+            else {
+                deleteTask(id);
+            }
         }
         else if (e.target.classList.contains("restore-button")) {
             restoreTask(id);
@@ -198,7 +203,7 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
     });
 
     const selectCategoria = document.getElementById("categoria-attivita");
-    const categorieOrdinate = [...categorieDemo].sort((a, b) => {
+    const categorieOrdinate = [...categorie].sort((a, b) => {
         if (a.idCategoria === 'default') return -1;
         if (b.idCategoria === 'default') return 1;
 
@@ -221,15 +226,15 @@ function openTaskModal(id = null) {
     const inputDescrizione = document.getElementById("descrizione-attivita");
     const inputDataScadenza = document.getElementById("data-scadenza-attivita");
     const formElement = document.getElementById("task-form");
-    const attivita = (id ? attivitaDemo.find(c => c.idAttivita === id) : null);
+    let newOrUpdateAttivita = (id ? attivita.find(c => c.idAttivita === id) : null);
 
     if (id) {
         modalTitle.textContent = "Modifica Attività";
-        inputDescrizione.value = attivita.descrizione;
-        inputDataScadenza.value = attivita.dataScadenza;
+        inputDescrizione.value = newOrUpdateAttivita.descrizione;
+        inputDataScadenza.value = newOrUpdateAttivita.dataScadenza;
         Array.from(document.getElementById("categoria-attivita")
             .getElementsByTagName("option"))
-            .filter(c => c.value === attivita.categoriaId)[0]
+            .filter(c => c.value === newOrUpdateAttivita.categoriaId)[0]
             .selected = true;
     }
     else {
@@ -238,7 +243,7 @@ function openTaskModal(id = null) {
         inputDataScadenza.value = null;
         Array.from(document.getElementById("categoria-attivita")
             .getElementsByTagName("option"))
-            .filter(c => c.value === "default")[0]
+            .filter(c => c.value === impostazioni.categoriaPredefinita)[0]
             .selected = true;
     }
 
@@ -260,16 +265,17 @@ function openTaskModal(id = null) {
         }
 
         if (id) {
-            attivita.categoriaId = document.getElementById("categoria-attivita").value;
-            attivita.descrizione = descrizione;
-            attivita.dataScadenza = dataScadenza;
+            newOrUpdateAttivita.categoriaId = document.getElementById("categoria-attivita").value;
+            newOrUpdateAttivita.descrizione = descrizione;
+            newOrUpdateAttivita.dataScadenza = dataScadenza;
         }
         else {
-            const newAttivita = Attivita.create(document.getElementById("categoria-attivita").value, descrizione, dataScadenza);
-            attivitaDemo.push(newAttivita);
+            newOrUpdateAttivita = Attivita.create(document.getElementById("categoria-attivita").value, descrizione, dataScadenza);
+            attivita.push(newOrUpdateAttivita);
         }
 
         modalElement.classList.add("hidden");
+        saveAttivita(attivita);
         renderGestioneAttivita(currentIdCategoria, document.getElementById("includi-attivita-completate").checked, currentCestino);
     }
 
@@ -279,44 +285,48 @@ function openTaskModal(id = null) {
 }
 
 function closeTask(id) {
-    const attivita = attivitaDemo.find(c => c.idAttivita === id);
+    const closeAttivita = attivita.find(c => c.idAttivita === id);
 
-    const confirmClose = confirm(`Confermi di voler contrassegnare l'attività "${attivita.descrizione}" come completata?`);
+    const confirmClose = confirm(`Confermi di voler contrassegnare l'attività "${closeAttivita.descrizione}" come completata?`);
     if (confirmClose) {
-        attivita.dataCompletamento = new Date().toISOString().slice(0, 10);
+        closeAttivita.dataCompletamento = new Date().toISOString().slice(0, 10);
+        saveAttivita(attivita);
         renderGestioneAttivita(currentIdCategoria, document.getElementById("includi-attivita-completate").checked, currentCestino);
     }
 }
 
 function recycleTask(id) {
-    const recycleAttivita = attivitaDemo.find(c => c.idAttivita === id);
+    const recycleAttivita = attivita.find(c => c.idAttivita === id);
 
     const confirmRecycle = confirm(`Confermi di voler spostare nel cestino l'attività "${recycleAttivita.descrizione}"?`);
     if (confirmRecycle) {
         recycleAttivita.dataEliminazione = new Date().toISOString().slice(0, 10);
+        saveAttivita(attivita);
         renderGestioneAttivita(currentIdCategoria, document.getElementById("includi-attivita-completate").checked, currentCestino);
         renderSidebarCategorie();
     }
 }
 
 function restoreTask(id) {
-    const restoreAttivita = attivitaDemo.find(c => c.idAttivita === id);
+    const restoreAttivita = attivita.find(c => c.idAttivita === id);
 
     const confirmRestore = confirm(`Confermi di voler ripristinare l'attività "${restoreAttivita.descrizione}"?`);
     if (confirmRestore) {
         restoreAttivita.dataEliminazione = null;
+        saveAttivita(attivita);
         renderGestioneAttivita(currentIdCategoria, document.getElementById("includi-attivita-completate").checked, currentCestino);
         renderSidebarCategorie();
     }
 }
 
 function deleteTask(id) {
-    const delAttivita = attivitaDemo.find(c => c.idAttivita === id);
+    const delAttivita = attivita.find(c => c.idAttivita === id);
 
     const confirmDelete = confirm(`Confermi di voler eliminare definitivamente l'attività "${delAttivita.descrizione}"?`);
     if (confirmDelete) {
-        const index = attivitaDemo.findIndex(c => c.idAttivita === id);
-        attivitaDemo.splice(index, 1);
+        const index = attivita.findIndex(c => c.idAttivita === id);
+        attivita.splice(index, 1);
+        saveAttivita(attivita);
         renderGestioneAttivita(currentIdCategoria, document.getElementById("includi-attivita-completate").checked, currentCestino);
         renderSidebarCategorie();
     }

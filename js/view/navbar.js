@@ -1,17 +1,11 @@
-import { categorieDemo } from "../app.js";
-import { attivitaDemo } from "../app.js";
+import { categorie, attivita, impostazioni } from "../app.js";
 
 export function renderSidebarCategorie() {
     const ulCategorie = document.getElementById("category-list");
     ulCategorie.innerHTML = "";
 
-    const categorieOrdinate = [...categorieDemo].sort((a, b) => {
-        if (a.idCategoria === 'default') return -1;
-        if (b.idCategoria === 'default') return 1;
-        
-        return a.descrizione.localeCompare(b.descrizione, "it", { sensitivity: "base" });
-        });
-        
+    const categorieOrdinate = [...categorie].sort((a, b) => a.descrizione.localeCompare(b.descrizione, "it", { sensitivity: "base" }));
+
     categorieOrdinate.forEach((categoria) => {
         const li = document.createElement("li");
         const button = document.createElement("button");
@@ -24,7 +18,7 @@ export function renderSidebarCategorie() {
         dot.className = "category-dot";
         if (categoria.colore !== "transparent") {
             dot.style.backgroundColor = categoria.colore;
-        } 
+        }
         else {
             dot.classList.add("hidden");
         }
@@ -34,7 +28,31 @@ export function renderSidebarCategorie() {
         ulCategorie.appendChild(li);
     });
 
-    const attivitaEliminate = attivitaDemo.filter(a => a.dataEliminazione !== null);
+    const attivitaEliminate = attivita.filter(a => a.dataEliminazione !== null);
     const btnRecycleBin = document.getElementById("btn-recycle-bin");
     btnRecycleBin.textContent = `Cestino (${attivitaEliminate.length})`;
+
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebar-toggle");
+    sidebarToggle.addEventListener("click", () => {
+        const isExpanded = sidebarToggle.ariaLabel === "Comprimi sidebar";
+        if (isExpanded) {
+            sidebar.classList.add("collapsed");
+            sidebarToggle.ariaLabel = "Espandi sidebar";
+            sidebarToggle.textContent = ">";
+        }
+        else {
+            sidebar.classList.remove("collapsed");
+            sidebarToggle.ariaLabel = "Comprimi sidebar";
+            sidebarToggle.textContent = "<";
+        }
+    });
+
+    const btnCestino = document.getElementById("li-cestino");
+    if (!impostazioni.cestinoAbilitato) {
+        btnCestino.classList.add("hidden");
+    }
+    else {
+        btnCestino.classList.remove("hidden");
+    }
 }

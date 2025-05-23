@@ -1,7 +1,8 @@
-import { categorieDemo } from "../app.js";
-import { attivitaDemo } from "../app.js";
+import { categorie } from "../app.js";
+import { attivita } from "../app.js";
 import { Categoria } from "../model/categoria.js";
 import { renderSidebarCategorie } from "./navbar.js";
+import { saveCategorie } from "../storage.js";
 
 export function renderGestioneCategorie() {
     const mainElement = document.getElementById("main-content");
@@ -43,7 +44,7 @@ export function renderGestioneCategorie() {
     const categoryTableBody = document.getElementById("category-table-body");
     categoryTableBody.innerHTML = "";
 
-    const categorieOrdinate = [...categorieDemo].sort((a, b) => {
+    const categorieOrdinate = [...categorie].sort((a, b) => {
         if (a.idCategoria === 'default') return -1;
         if (b.idCategoria === 'default') return 1;
 
@@ -102,7 +103,7 @@ function openCategoryModal(id = null) {
     const inputDescrizione = document.getElementById("descrizione-categoria");
     const inputColore = document.getElementById("colore-categoria");
     const formElement = document.getElementById("category-form");
-    const categoria = (id ? categorieDemo.find(c => c.idCategoria === id) : null);
+    const categoria = (id ? categorie.find(c => c.idCategoria === id) : null);
     const chkNessunColore = document.getElementById("colore-trasparente-categoria");
 
     if (id) {
@@ -137,10 +138,11 @@ function openCategoryModal(id = null) {
         }
         else {
             const newCategoria = Categoria.create(descrizione, (chkNessunColore.checked ? "transparent" : inputColore.value));
-            categorieDemo.push(newCategoria);
+            categorie.push(newCategoria);
         }
 
         modalElement.classList.add("hidden");
+        saveCategorie(categorie);
         renderGestioneCategorie();
         renderSidebarCategorie();
     }
@@ -151,21 +153,22 @@ function openCategoryModal(id = null) {
 }
 
 function deleteCategory(id) {
-    const delCategoria = categorieDemo.find(c => c.idCategoria === id);
+    const delCategoria = categorie.find(c => c.idCategoria === id);
     if (!delCategoria.canDelete) {
         alert("La categoria selezionata non è eliminabile!");
         return;
     }
 
-    if (attivitaDemo.some(a => a.categoriaId === id)) {
+    if (attivita.some(a => a.categoriaId === id)) {
         alert("Non è possibile eliminare la categoria selezionata perché risulta associata ad una o più attività!");
         return;
     }
 
     const confirmDelete = confirm(`Confermi di voler eliminare la categoria "${delCategoria.descrizione}"?`);
     if (confirmDelete) {
-        const index = categorieDemo.findIndex(c => c.idCategoria === id);
-        categorieDemo.splice(index, 1);
+        const index = categorie.findIndex(c => c.idCategoria === id);
+        categorie.splice(index, 1);
+        saveCategorie(categorie);
         renderGestioneCategorie();
         renderSidebarCategorie();
     }
