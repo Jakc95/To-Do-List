@@ -56,10 +56,12 @@ export function loadImpostazioni() {
     }
 }
 
-export function saveImpostazioni(impostazioni) {
+export function saveImpostazioni(impostazioni, showAlert = true) {
     try {
         localStorage.setItem(chiaveImpostazioni, JSON.stringify(impostazioni));
-        alert("Impostazioni salvate con successo!");
+        if (showAlert === true) {
+            alert("Impostazioni salvate con successo!");
+        }
     }
     catch {
         alert("Errore durante il salvataggio delle impostazioni!");

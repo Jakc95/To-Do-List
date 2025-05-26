@@ -69,7 +69,13 @@ export function renderGestioneAttivita(idCategoria = "", includiAttivitaCompleta
     taskTableBody.innerHTML = "";
 
     const chkIncludiAttivitaCompletate = document.getElementById("includi-attivita-completate");
-    const attivitaOrdinate = [...attivita].sort((a, b) => a.dataScadenza.localeCompare(b.dataScadenza));
+    let attivitaOrdinate = [...attivita];
+    if (currentCestino) {
+        attivitaOrdinate = attivitaOrdinate.sort((a, b) => a.dataScadenza.localeCompare(b.dataEliminazione));
+    }
+    else {
+        attivitaOrdinate = attivitaOrdinate.sort((a, b) => a.dataScadenza.localeCompare(b.dataScadenza));
+    }
 
     let attivitaFiltrate = attivitaOrdinate.filter(a => (currentIdCategoria === "" || a.categoriaId === currentIdCategoria) &&
         (currentCestino || chkIncludiAttivitaCompletate.checked || a.dataCompletamento === null));

@@ -1,6 +1,8 @@
 import { categorie, attivita, impostazioni } from "../app.js";
 
 export function renderSidebarCategorie() {
+    applicaTema();
+
     const ulCategorie = document.getElementById("category-list");
     ulCategorie.innerHTML = "";
 
@@ -55,4 +57,9 @@ export function renderSidebarCategorie() {
     else {
         btnCestino.classList.remove("hidden");
     }
+}
+
+function applicaTema() {
+    const tema = impostazioni.tema;
+    document.documentElement.setAttribute('data-theme', tema);
 }

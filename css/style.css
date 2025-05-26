@@ -3,8 +3,8 @@
   --text: #111;
 }
 
-:root[data-theme="dark"] {
-  --bg: #121212;
+:root[data-theme="scuro"] {
+  --bg: #121212da;
   --text: #eee;
 }
 
