@@ -54,10 +54,6 @@ body {
   overflow: hidden;
 }
 
-#sidebar.collapsed #sidebar-toggle {
-  right: -35px;
-}
-
 .sidebar-title {
   text-align: center;
   font-size: 24px;

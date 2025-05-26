@@ -36,8 +36,8 @@ export function renderSidebarCategorie() {
 
     const sidebar = document.getElementById("sidebar");
     const sidebarToggle = document.getElementById("sidebar-toggle");
-    sidebarToggle.addEventListener("click", () => {
-        const isExpanded = sidebarToggle.ariaLabel === "Comprimi sidebar";
+    sidebarToggle.onclick = () => {
+        const isExpanded = !sidebar.classList.contains("collapsed");
         if (isExpanded) {
             sidebar.classList.add("collapsed");
             sidebarToggle.ariaLabel = "Espandi sidebar";
@@ -48,7 +48,7 @@ export function renderSidebarCategorie() {
             sidebarToggle.ariaLabel = "Comprimi sidebar";
             sidebarToggle.textContent = "<";
         }
-    });
+    };
 
     const btnCestino = document.getElementById("li-cestino");
     if (!impostazioni.cestinoAbilitato) {
